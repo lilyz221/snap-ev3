@@ -1,0 +1,6 @@
+[submodule "Snap--Build-Your-Own-Blocks"]
+	path = Snap--Build-Your-Own-Blocks
+	url = https://github.com/azawlocki/Snap--Build-Your-Own-Blocks
+[submodule "snap"]
+	path = snap
+	url = git@github.com:azawlocki/Snap--Build-Your-Own-Blocks.git
