@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 from __future__ import print_function
 
 import os
@@ -14,7 +15,7 @@ class Ev3Handler(SimpleHTTPRequestHandler):
         if self.path.startswith("/ev3/"):
             url = urlparse.urlparse(self.path)
             endpoint = url.path[len("/ev3/"):]
-            params = urlparse.parse_qs(self.path)
+            params = urlparse.parse_qs(url.query)
             return self.handle_ev3_request(endpoint, params)
         
         if self.path == "/":
@@ -28,6 +29,7 @@ class Ev3Handler(SimpleHTTPRequestHandler):
         print("params:", params)
 
         self.send_response(200)
+        self.send_header("Cache-control", "no cache")
         self.end_headers()
         self.wfile.write("endpoint = {}\n".format(endpoint))
         
