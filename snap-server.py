@@ -5,8 +5,16 @@ import os
 import sys
 import urlparse
 
+import ev3dev.ev3 as ev3
+
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import SocketServer
+
+
+
+BadRequest = 400
+
+ServiceUnavailable = 503
 
 
 class Ev3Handler(SimpleHTTPRequestHandler):
@@ -14,9 +22,9 @@ class Ev3Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/ev3/"):
             url = urlparse.urlparse(self.path)
-            endpoint = url.path[len("/ev3/"):]
+            command = url.path.split("/")[2:]
             params = urlparse.parse_qs(url.query)
-            return self.handle_ev3_request(endpoint, params)
+            return self.handle_ev3_request(command, params)
         
         if self.path == "/":
             # Serve the main Snap! page instead of the directory listing
@@ -24,16 +32,66 @@ class Ev3Handler(SimpleHTTPRequestHandler):
 
         SimpleHTTPRequestHandler.do_GET(self)
 
-    def handle_ev3_request(self, endpoint, params):
-        print("endpoint:", endpoint)
+        
+    def handle_ev3_request(self, command, params):
+        print("command:", command)
         print("params:", params)
 
+        class_ = command[0]
+        if class_ == 'Motor':
+            if len(command) < 3:
+                return self.send_error(BadRequest,
+                                       "Port and property name required")
+            port = command[1]
+            prop = command[2]
+            return self.handle_motor_command(port, prop, params)
+
+        return self.error(BadRequest)
+        
+
+    def handle_motor_command(self, port, prop, params):
+        motor = ev3.Motor("out" + port)
+
+        if prop == "connected":
+            return self.send_result(motor.connected)
+        
+        if not motor.connected:
+            return self.send_error(ServiceUnavailable,
+                                   "Motor not connected to this port")
+        if prop == '':
+            return self.send_error(BadRequest,
+                                   "Missing property name")
+        
+        if "value" in params:
+            # This is a write property
+            if len(params["value"]) != 1:
+                return self.send_error(BadRequest, "Single value expected")
+            setattr(motor, prop, params["value"][0])
+            self.send_result("ok")
+        else:
+            # This is a read property
+            if params:
+                return self.send_error(BadRequest, "Unexpected parameters")
+            result = getattr(motor, prop, None)
+            if result is None:
+                return self.send_error(BadRequest, "Bad property")
+            self.send_result(result)
+
+            
+    def send_result(self, value):
         self.send_response(200)
         self.send_header("Cache-control", "no cache")
         self.end_headers()
-        self.wfile.write("endpoint = {}\n".format(endpoint))
-        
+        self.wfile.write(value)
+        self.wfile.write("\n")
 
+        
+    def error(self, code):
+        self.send_response(code)
+        self.send_header("Cache-control", "no cache")
+        self.end_headers()
+        
+        
 port = 9000
 if len(sys.argv) > 1:
     port = int(sys.argv[1])
