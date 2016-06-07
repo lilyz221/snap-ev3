@@ -11,13 +11,13 @@ from SimpleHTTPServer import SimpleHTTPRequestHandler
 import SocketServer
 
 
-
 BadRequest = 400
-
 ServiceUnavailable = 503
 
 
 class Ev3Handler(SimpleHTTPRequestHandler):
+
+    devices = {}
 
     def do_GET(self):
         if self.path.startswith("/ev3/"):
@@ -38,7 +38,7 @@ class Ev3Handler(SimpleHTTPRequestHandler):
         print("params:", params)
 
         class_ = command[0]
-        if class_ == 'Motor':
+        if class_ == 'motor':
             if len(command) < 3:
                 return self.send_error(BadRequest,
                                        "Port and property name required")
@@ -47,10 +47,22 @@ class Ev3Handler(SimpleHTTPRequestHandler):
             return self.handle_motor_command(port, prop, params)
 
         return self.error(BadRequest)
-        
 
+
+    def find_device(self, ident, device_class):
+
+        if ident in Ev3Handler.devices:
+            device = Ev3Handler.devices[ident]
+            assert isinstance(device, device_class)
+        else:
+            device = device_class(ident, name_exact=True)
+            Ev3Handler.devices[ident] = device
+        return device
+
+    
     def handle_motor_command(self, port, prop, params):
-        motor = ev3.Motor("out" + port)
+
+        motor = self.find_device(port, ev3.Motor)
 
         if prop == "connected":
             return self.send_result(motor.connected)
@@ -90,13 +102,18 @@ class Ev3Handler(SimpleHTTPRequestHandler):
         self.send_response(code)
         self.send_header("Cache-control", "no cache")
         self.end_headers()
-        
-        
-port = 9000
-if len(sys.argv) > 1:
-    port = int(sys.argv[1])
 
-os.chdir("snap")
+        
+def start_server(port):
+    os.chdir(os.path.join(os.path.dirname(__file__), "snap"))
+
+    server = SocketServer.TCPServer(("", port), Ev3Handler)
+    server.serve_forever()
+
     
-server = SocketServer.TCPServer(("", port), Ev3Handler)
-server.serve_forever()
+if __name__ == "__main__":        
+    port = 9000
+    if len(sys.argv) > 1:
+        port = int(sys.argv[1])
+
+    start_server(port)
