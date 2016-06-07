@@ -78,15 +78,20 @@ class Ev3Handler(SimpleHTTPRequestHandler):
             # This is a write property
             if len(params["value"]) != 1:
                 return self.send_error(BadRequest, "Single value expected")
-            setattr(motor, prop, params["value"][0])
-            self.send_result("ok")
+            try:
+                setattr(motor, prop, params["value"][0])
+                self.send_result("ok")
+            except AttributeError as err:
+                self.send_error(BadRequest,
+                                "Cannot set attribute '{}'".format(prop))
         else:
             # This is a read property
             if params:
                 return self.send_error(BadRequest, "Unexpected parameters")
             result = getattr(motor, prop, None)
             if result is None:
-                return self.send_error(BadRequest, "Bad property")
+                return self.send_error(BadRequest,
+                                       "Cannot read attribute '{}'".format(prop))
             self.send_result(result)
 
             
