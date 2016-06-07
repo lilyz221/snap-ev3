@@ -49,14 +49,14 @@ class Ev3Handler(SimpleHTTPRequestHandler):
         return self.error(BadRequest)
 
 
-    def find_device(self, ident, device_class):
+    def find_device(self, port, device_class):
 
-        if ident in Ev3Handler.devices:
-            device = Ev3Handler.devices[ident]
+        if port in Ev3Handler.devices:
+            device = Ev3Handler.devices[port]
             assert isinstance(device, device_class)
         else:
-            device = device_class(ident, name_exact=True)
-            Ev3Handler.devices[ident] = device
+            device = device_class(port_name=port)
+            Ev3Handler.devices[port] = device
         return device
 
     
