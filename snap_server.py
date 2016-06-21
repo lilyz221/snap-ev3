@@ -22,10 +22,16 @@ class Ev3Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/ev3/"):
             url = urlparse.urlparse(self.path)
-            command = url.path.split("/")[2:]
+            path = url.path.split("/")
+            if len(path) != 5:
+                # '', 'ev3', class, port, attribute
+                return self.send_error(BadRequest, "Bad request path")
+            device_class = path[2]
+            port = path[3]
+            attribute = path[4].lower()
             params = urlparse.parse_qs(url.query)
-            return self.handle_ev3_request(command, params)
-        
+            return self.handle_ev3_request(device_class, port, attribute, params)
+                
         if self.path == "/":
             # Serve the main Snap! page instead of the directory listing
             self.path = "/snap.html"
@@ -33,66 +39,51 @@ class Ev3Handler(SimpleHTTPRequestHandler):
         SimpleHTTPRequestHandler.do_GET(self)
 
         
-    def handle_ev3_request(self, command, params):
-        print("command:", command)
-        print("params:", params)
-
-        class_ = command[0]
-        if class_ == 'motor':
-            if len(command) < 3:
-                return self.send_error(BadRequest,
-                                       "Port and property name required")
-            port = command[1]
-            prop = command[2]
-            return self.handle_motor_command(port, prop, params)
-
-        return self.error(BadRequest)
-
-
-    def find_device(self, port, device_class):
-
-        if port in Ev3Handler.devices:
-            device = Ev3Handler.devices[port]
-            assert isinstance(device, device_class)
-        else:
-            device = device_class(port_name=port)
-            Ev3Handler.devices[port] = device
-        return device
-
-    
-    def handle_motor_command(self, port, prop, params):
-
-        motor = self.find_device(port, ev3.Motor)
-
-        if prop == "connected":
-            return self.send_result(motor.connected)
+    def handle_ev3_request(self, device_class, port, attribute, params):
+        print("class = {}, port = {}, attribute = {}, params = {}"
+              .format(device_class, port, attribute, params))
         
-        if not motor.connected:
-            return self.send_error(ServiceUnavailable,
-                                   "Motor not connected to this port")
-        if prop == '':
-            return self.send_error(BadRequest,
-                                   "Missing property name")
+        attribute = attribute.lower()
+        
+        device = self.find_device(port, device_class)
+        if not device.connected:
+            if attribute == 'connected':
+                return self.send_result(False)
+            else:
+                return self.send_error("Device not connected")
         
         if "value" in params:
             # This is a write property
             if len(params["value"]) != 1:
                 return self.send_error(BadRequest, "Single value expected")
             try:
-                setattr(motor, prop, params["value"][0])
-                self.send_result("ok")
+                device._set_attribute(None, attribute, params["value"][0])
+                return self.send_result("ok")
             except AttributeError as err:
-                self.send_error(BadRequest,
-                                "Cannot set attribute '{}'".format(prop))
+                return self.send_error(BadRequest,
+                                "Cannot set attribute '{}'".format(attribute))
         else:
             # This is a read property
             if params:
                 return self.send_error(BadRequest, "Unexpected parameters")
-            result = getattr(motor, prop, None)
+            _, result = device._get_attribute(None, attribute)
             if result is None:
                 return self.send_error(BadRequest,
-                                       "Cannot read attribute '{}'".format(prop))
-            self.send_result(result)
+                                       "Cannot read attribute '{}', path = '{}'"
+                                       .format(attribute, device._path))
+            return self.send_result(result)
+        
+        return self.error(BadRequest)
+
+
+    def find_device(self, port, device_class):
+        if port in Ev3Handler.devices:
+            device = Ev3Handler.devices[port]
+        else:
+            device = ev3.Device(device_class, address=port)
+            Ev3Handler.devices[port] = device
+            print("New device object created, path = " + device._path)
+        return device
 
             
     def send_result(self, value):
