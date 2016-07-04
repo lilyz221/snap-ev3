@@ -1,3 +1,4 @@
 [submodule "snap"]
 	path = snap
 	url = git@github.com:azawlocki/Snap--Build-Your-Own-Blocks.git
+	branch = ev3-blocks
