@@ -7,6 +7,7 @@ import urlparse
 
 import ev3dev.ev3 as ev3
 
+import cgi
 from SimpleHTTPServer import SimpleHTTPRequestHandler
 import SocketServer
 
@@ -19,6 +20,17 @@ class Ev3Handler(SimpleHTTPRequestHandler):
 
     devices = {}
 
+    def do_POST(self):
+        ctype, pdict = cgi.parse_header(self.headers['Content-type'])
+        form = cgi.parse_multipart(self.rfile, pdict)
+        code = form['code'][0]
+        
+        self.send_response(200)
+        self.end_headers()
+
+        print(code)
+        return
+    
     def do_GET(self):
         if self.path.startswith("/ev3/"):
             url = urlparse.urlparse(self.path)
