@@ -3,13 +3,13 @@ from __future__ import print_function
 
 import os
 import sys
-import urlparse
+from urllib.parse import urlparse
 
 import ev3dev.ev3 as ev3
 
 import cgi
-from SimpleHTTPServer import SimpleHTTPRequestHandler
-import SocketServer
+from http.server import SimpleHTTPRequestHandler
+import socketserver
 
 
 BadRequest = 400
@@ -113,14 +113,14 @@ class Ev3Handler(SimpleHTTPRequestHandler):
 
         
 def start_server(port):
-    os.chdir(os.path.join(os.path.dirname(__file__), "snap"))
-
-    server = SocketServer.TCPServer(("", port), Ev3Handler)
+    os.chdir(os.path.join(os.path.dirname(__file__), "snapOrig"))
+    server = socketserver.TCPServer(("", port), Ev3Handler)
+    print("starting server")
     server.serve_forever()
 
     
 if __name__ == "__main__":        
-    port = 9000
+    port = 8000
     if len(sys.argv) > 1:
         port = int(sys.argv[1])
 

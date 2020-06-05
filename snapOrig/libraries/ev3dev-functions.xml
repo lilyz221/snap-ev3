@@ -1,0 +1,118 @@
+<blocks app="Snap! 4.0, http://snap.berkeley.edu" version="1">
+  <block-definition s="get sensor %'portName' value number %'index'" type="reporter" category="sensing">
+    <header/>
+    <code/>
+    <inputs>
+      <input type="%txt"/>
+      <input type="%n"/>
+    </inputs>
+    <script>
+      <block s="doReport">
+        <block s="reportURL">
+          <block s="reportJoinWords">
+            <list>
+              <l>./ev3dev/sensor?portName=</l>
+              <block var="portName"/>
+              <l>&amp;index=</l>
+              <block var="index"/>
+            </list>
+          </block>
+        </block>
+      </block>
+    </script>
+  </block-definition>
+  <block-definition s="set motor %'port' property %'propertyName' to %'value'" type="command" category="motion">
+    <header/>
+    <code/>
+    <inputs>
+      <input type="%txt"/>
+      <input type="%txt"/>
+      <input type="%s"/>
+    </inputs>
+    <script>
+      <block s="doReport">
+        <block s="reportURL">
+          <block s="reportJoinWords">
+            <list>
+              <l>./ev3dev/motor?portName=</l>
+              <block var="port"/>
+              <l>&amp;property=</l>
+              <block var="propertyName"/>
+              <l>&amp;value=</l>
+              <block var="value"/>
+            </list>
+          </block>
+        </block>
+      </block>
+    </script>
+  </block-definition>
+  <block-definition s="set sensor %'portName' property %'propertyName' to value %'value'" type="command" category="sensing">
+    <header/>
+    <code/>
+    <inputs>
+      <input type="%txt"/>
+      <input type="%txt"/>
+      <input type="%txt"/>
+    </inputs>
+    <script>
+      <block s="doReport">
+        <block s="reportURL">
+          <block s="reportJoinWords">
+            <list>
+              <l>./ev3dev/sensor?portName=</l>
+              <block var="portName"/>
+              <l>&amp;property=</l>
+              <block var="propertyName"/>
+              <l>&amp;value=</l>
+              <block var="value"/>
+            </list>
+          </block>
+        </block>
+      </block>
+    </script>
+  </block-definition>
+  <block-definition s="get sensor %'portName' property %'propertyName'" type="reporter" category="sensing">
+    <header/>
+    <code/>
+    <inputs>
+      <input type="%txt"/>
+      <input type="%txt"/>
+    </inputs>
+    <script>
+      <block s="doReport">
+        <block s="reportURL">
+          <block s="reportJoinWords">
+            <list>
+              <l>./ev3dev/sensor?portName=</l>
+              <block var="portName"/>
+              <l>&amp;property=</l>
+              <block var="propertyName"/>
+            </list>
+          </block>
+        </block>
+      </block>
+    </script>
+  </block-definition>
+  <block-definition s="get motor %'portName' property %'propertyName'" type="reporter" category="motion">
+    <header/>
+    <code/>
+    <inputs>
+      <input type="%txt"/>
+      <input type="%txt"/>
+    </inputs>
+    <script>
+      <block s="doReport">
+        <block s="reportURL">
+          <block s="reportJoinWords">
+            <list>
+              <l>./ev3dev/motor?portName=</l>
+              <block var="portName"/>
+              <l>&amp;property=</l>
+              <block var="propertyName"/>
+            </list>
+          </block>
+        </block>
+      </block>
+    </script>
+  </block-definition>
+</blocks>
